@@ -1,0 +1,102 @@
+<!Celes-0.1.5>
+<title>{Message Cleaner}
+<author>{TheServer-lab}
+
+<header -size=1>{Message Cleaner}
+
+<blockquote>{This is a <bold>{personally maintained fork} of the original Message Cleaner project, actively updated and improved. Original project made by the <link -body=Random Python Discord community>{https://discord.gg/wJEfpyd2fk}.}
+
+<line>{<bold>{Message Cleaner} is a powerful, customizable Discord bot manager that automatically deletes messages older than a specified time in selected channels. Built with a modern GUI, system tray support, and an auto-updater — it's the easiest way to keep your Discord server clean and organized.}
+
+<image>{https://media.discordapp.net/attachments/1388905295480361063/1388905894057611507/message-cleaner-gui-preview.PNG?ex=6862aee9&is=68615d69&hm=85699c9be0e2e1893e2e2c649393b52f83fb7d9cfb21ee131e541d3c8ea08af0&=&format=webp&quality=lossless}
+
+<insertspace>
+
+<header -size=2>{Features}
+
+<table>{Feature, Description}
+<item>{GUI Interface, No command line or code editing required}
+<item>{Auto Cleanup, Deletes old messages on a configurable timed interval}
+<item>{Multi-Channel Support, Target multiple channels at once}
+<item>{Configurable Settings, Easily set your token, interval, message age, and channels}
+<item>{Log Viewer, View and delete log files directly from the app}
+<item>{Update Checker, Get notified automatically when a new version is available}
+<item>{Minimize to Tray, Runs quietly in the background without cluttering your taskbar}
+
+<insertspace>
+
+<header -size=2>{Download}
+
+<blockquote>{Just run the <code>{.exe} — no installation needed!}
+
+<line>{Get the latest release from the <link -body=Releases page>{https://github.com/TheServer-lab/Discord-Message-Cleaner-New/releases}.}
+
+<line>{For developers or advanced users, you can also clone and run the source code directly using <bold>{Python 3.10+} — see the Developer Setup section below.}
+
+<insertspace>
+
+<header -size=2>{Usage (Executable)}
+
+<list -bullet=number>{Run the <code>{.exe} file}
+<list -bullet=number>{Enter your settings:}
+<sublist -bullet=circle>{Your bot's Discord token}
+<sublist -bullet=circle>{Channel IDs (comma-separated)}
+<sublist -bullet=circle>{Message age threshold (in minutes)}
+<sublist -bullet=circle>{Check interval (in seconds)}
+<list -bullet=number>{Click <bold>{Save & Start}}
+<list -bullet=number>{Monitor real-time logs in the app, or minimize to the system tray}
+
+<line>{<bold>{Config and log files are saved to:}}
+
+<codeblock>{C:\Users\<YourName>\Documents\Random Python\Message Cleaner\}
+
+<insertspace>
+
+<header -size=2>{Security & Token Notice}
+
+<blockquote>{Please read before use.}
+
+<list -bullet=circle>{The <code>{update_checker} bot token is bundled in the executable solely to fetch version info via Discord. It is restricted to a <bold>{single read-only channel} and cannot be misused.}
+<list -bullet=circle>{In the source code version, this token is <bold>{fully redacted} for transparency and security.}
+<list -bullet=circle>{Your own bot token (used for message cleanup) is stored <bold>{only in your local config file} and is never transmitted or shared.}
+
+<insertspace>
+
+<header -size=2>{Developer Setup}
+
+<line>{Clone this fork and install dependencies:}
+
+<codeblock>{git clone https://github.com/TheServer-lab/Discord-Message-Cleaner-New.git
+cd Discord-Message-Cleaner-New
+pip install -r requirements.txt
+python message_cleaner_gui.py}
+
+<header -size=3>{Building the Executable}
+
+<line>{To compile a standalone <code>{.exe} using PyInstaller:}
+
+<codeblock>{pyinstaller --onefile --noconsole \
+  --icon=Cleaner_icon-icons.com_53211.ico \
+  --add-data "Cleaner_icon-icons.com_53211.ico;." \
+  message_cleaner_gui.py}
+
+<insertspace>
+
+<header -size=2>{License}
+
+<line>{Message Cleaner is released under a <bold>{custom license}. In summary:}
+
+<list -bullet=circle>{<checkmark -check>{} You <bold>{may} use, modify, and distribute the code}
+<list -bullet=circle>{<checkmark -uncheck>{} You <bold>{must not} use it for malicious or illegal purposes}
+<list -bullet=circle>{<checkmark -check>{} You <bold>{must} give credit and notify users of any unofficial changes}
+
+<line>{See <code>{LICENSE.txt} for full terms.}
+
+<insertspace>
+
+<header -size=2>{Credits}
+
+<line>{Originally made with love by the <bold>{Random Python} Discord community.}
+<line>{This fork is personally maintained by <link -body=@TheServer-lab>{https://github.com/TheServer-lab}.}
+<line>{Join us for help, suggestions, updates, and fun projects:}
+<line>{<button -body=discord.gg/wJEfpyd2fk>{https://discord.gg/wJEfpyd2fk}}

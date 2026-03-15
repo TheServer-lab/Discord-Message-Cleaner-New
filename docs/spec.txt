@@ -1,0 +1,716 @@
+================================================================================
+CELES LANGUAGE SPECIFICATION
+Version 0.1.5
+================================================================================
+
+Author  : Sourasish Das
+Date    : 2026
+License : SOCL 1.0
+Repo    : https://github.com/TheServer-lab/Celes
+
+--------------------------------------------------------------------------------
+CONTENTS
+--------------------------------------------------------------------------------
+
+  1.  Overview
+  2.  Design Goals
+  3.  File Format
+  4.  Version Declaration
+  5.  Core Syntax Rules
+  6.  Attributes
+  7.  Comments
+  8.  Tag Reference — Metadata
+  9.  Tag Reference — Block Elements
+  10. Tag Reference — Inline Elements
+  11. Tag Reference — Spacing & Breaks
+  12. Tag Reference — 0.1.5 New Tags
+  13. Nesting Rules
+  14. Multi-tag Lines
+  15. Parser Behaviour
+  16. Validator Rules
+  17. Version History
+
+================================================================================
+1. OVERVIEW
+================================================================================
+
+Celes is a tag-based markup language designed for long-term document archiving.
+Its primary goal is to produce plain-text files that remain readable and
+parseable decades from now, without requiring any specific application,
+operating system, or rendering environment.
+
+A Celes file is a sequence of lines, each containing one or more tags. Every
+tag is a named English word. Every attribute is named and explicit. The format
+contains no whitespace-sensitive syntax, no sigil characters (*, #, >, etc.),
+and no implicit formatting rules.
+
+================================================================================
+2. DESIGN GOALS
+================================================================================
+
+  LONGEVITY
+    A Celes file must be readable as raw plain text without any parser. The tag
+    names and attribute values are chosen to be self-explanatory to a human
+    reader in any future context.
+
+  STRICTNESS
+    The parser never silently ignores malformed input. Any tag that violates the
+    syntax rules produces an error token. This means corruption is detected
+    immediately, not discovered years after archiving.
+
+  EXPLICITNESS
+    Every formatting decision is stated in the file. There are no defaults that
+    depend on parser version, platform, or rendering engine. A document looks
+    the same on every conforming parser.
+
+  SIMPLICITY
+    A conforming parser can be implemented in approximately 200 lines of any
+    general-purpose programming language. No external libraries are required.
+
+  VERSION AWARENESS
+    Every Celes file declares its specification version on the first line. A
+    future parser always knows exactly which rules to apply.
+
+================================================================================
+3. FILE FORMAT
+================================================================================
+
+  Encoding   : UTF-8 (required)
+  Line ending: LF (\n) or CRLF (\r\n) — both accepted
+  Extension  : .celes
+  BOM        : Optional UTF-8 BOM is accepted but not required
+
+  A Celes file consists of:
+    - Exactly one version declaration (first non-blank line)
+    - Zero or more tag lines
+    - Zero or more blank lines (ignored)
+    - Zero or more comment lines
+
+================================================================================
+4. VERSION DECLARATION
+================================================================================
+
+  Syntax:
+    <!Celes-X.Y.Z>
+
+  Example:
+    <!Celes-0.1.5>
+
+  Rules:
+    - Must appear as the first non-blank line of the file
+    - There must be exactly one declaration per file
+    - The declaration has no content block — no {} follows it
+    - Parsers may use the version to select which rule set to apply
+    - Parsers encountering an unknown version SHOULD warn but MAY continue
+
+================================================================================
+5. CORE SYNTAX RULES
+================================================================================
+
+  RULE 1 — TAG FORMAT
+    Every tag begins with < and ends with >.
+    The tag name immediately follows <.
+    Attribute strings follow the tag name inside the angle brackets.
+
+      <tagname>
+      <tagname -attr>
+      <tagname -attr=value>
+      <tagname -attr1=value1 -attr2>
+
+  RULE 2 — CONTENT BLOCK
+    Tags that carry content are followed by a content block wrapped in {}.
+    The { must appear immediately after > with no whitespace between them.
+
+      <tagname>{content goes here}
+
+    Tags that do NOT carry content have no {} block:
+
+      <newline>
+      <pagebreak>
+      <insertspace>
+
+  RULE 3 — BRACES ARE REQUIRED
+    For any content tag, {} braces are mandatory. A content tag written
+    without braces is a parse error.
+
+      VALID  : <line>{Hello world}
+      INVALID: <line>Hello world
+
+  RULE 4 — NO CLOSING TAGS
+    Celes has no closing tags. <bold>{text} is complete as written.
+    There is no </bold>.
+
+  RULE 5 — CASE
+    Tag names are case-insensitive. <LINE> and <line> are identical.
+    By convention, all tags are written in lowercase.
+    Attribute names are also case-insensitive.
+    Attribute values are case-sensitive.
+
+  RULE 6 — WHITESPACE
+    Leading and trailing whitespace on a line is ignored.
+    Whitespace inside {} content is preserved exactly.
+    Blank lines between tags are ignored.
+    Indentation is never significant.
+
+  RULE 7 — MULTI-LINE CONTENT
+    A content block may span multiple lines if the opening { is on the same
+    line as the tag. The block ends at the matching closing }.
+
+      <codeblock>{
+      line one
+      line two
+      }
+
+    The parser tracks brace depth to find the matching close.
+
+================================================================================
+6. ATTRIBUTES
+================================================================================
+
+  SYNTAX
+    Attributes are written as -name or -name=value inside the tag header.
+    Attribute names begin with a hyphen (-).
+    Values with spaces are not supported — use a single unquoted token.
+
+      -loop          (flag attribute — presence means true)
+      -size=2        (value attribute)
+      -color=#FF0000 (value attribute with hex)
+      -bullet=circle (value attribute with word)
+
+  MULTIPLE ATTRIBUTES
+    Multiple attributes are separated by whitespace:
+
+      <video -loop -autoplay -mute>{clip.mp4}
+      <header -size=3>{Section Title}
+
+  FLAG ATTRIBUTES
+    A flag attribute has no = value. Its presence in the tag means true;
+    its absence means false.
+
+      <checkmark -check>{Done}        ; checked
+      <checkmark -uncheck>{Pending}   ; unchecked
+
+================================================================================
+7. COMMENTS
+================================================================================
+
+  Syntax:
+    ; comment text
+
+  Rules:
+    - A comment line begins with a semicolon (;) as the first non-whitespace
+      character
+    - Everything after the ; on that line is the comment text
+    - Comment lines are completely ignored by the parser
+    - Inline comments (after a tag on the same line) are NOT supported
+
+  Example:
+    ; This is a comment
+    <line>{This is content}
+    ; Another comment
+
+================================================================================
+8. TAG REFERENCE — METADATA
+================================================================================
+
+  These tags produce no visible output. They provide document metadata.
+
+  ──────────────────────────────────────────────────────────────────────────────
+  <title>{text}
+  ──────────────────────────────────────────────────────────────────────────────
+    Sets the document title. Used as the browser tab title, window title, or
+    document heading in renderers that treat it separately.
+    Recommended: place near top of file.
+    Only the first <title> is used; subsequent ones are ignored.
+
+  ──────────────────────────────────────────────────────────────────────────────
+  <author>{name}
+  ──────────────────────────────────────────────────────────────────────────────
+    Records the author's name. Not rendered visibly in the document body.
+    Used for archival metadata.
+
+  ──────────────────────────────────────────────────────────────────────────────
+  <date>{dd/mm/yyyy}
+  ──────────────────────────────────────────────────────────────────────────────
+    Records the document date. Not rendered visibly.
+    Recommended format: dd/mm/yyyy (e.g. 14/03/2026).
+    Any date string is accepted — the format is not validated.
+
+================================================================================
+9. TAG REFERENCE — BLOCK ELEMENTS
+================================================================================
+
+  Block elements occupy their own line(s) in the rendered output.
+  Block elements cannot be nested inside other block elements.
+  Block elements may contain inline elements in their content.
+
+  ──────────────────────────────────────────────────────────────────────────────
+  <header -size=N>{text}
+  ──────────────────────────────────────────────────────────────────────────────
+    Renders a heading. N is 1 through 6 (h1–h6).
+    -size is required. If omitted, parsers should default to 1.
+
+    Attributes:
+      -size=1   largest heading
+      -size=6   smallest heading
+
+    Content supports inline tags.
+
+    Example:
+      <header -size=1>{Introduction}
+      <header -size=2>{Background}
+
+  ──────────────────────────────────────────────────────────────────────────────
+  <section>{name}
+  ──────────────────────────────────────────────────────────────────────────────
+    Renders a visual section divider with the given name as a label.
+    Typically rendered as a horizontal rule with the name centred.
+
+    Example:
+      <section>{Chapter One}
+
+  ──────────────────────────────────────────────────────────────────────────────
+  <line>{text}
+  ──────────────────────────────────────────────────────────────────────────────
+    Renders a paragraph of text. This is the standard prose block.
+
+    Attributes:
+      -align=left    (default)
+      -align=center
+      -align=right
+
+    Content supports inline tags.
+
+    Example:
+      <line>{This is a paragraph.}
+      <line -align=center>{Centred text.}
+
+  ──────────────────────────────────────────────────────────────────────────────
+  <blockquote>{text}
+  ──────────────────────────────────────────────────────────────────────────────
+    Renders a blockquote. Typically indented with a left border.
+    Content supports inline tags including <nestquote>.
+
+    Example:
+      <blockquote>{To be or not to be. <nestquote>{That is the question.}}
+
+  ──────────────────────────────────────────────────────────────────────────────
+  <codeblock>{code}
+  ──────────────────────────────────────────────────────────────────────────────
+    Renders a multi-line preformatted code block.
+    Content is treated as raw text — no inline tags are parsed inside.
+    Whitespace and newlines are preserved exactly.
+
+    Example:
+      <codeblock>{def greet():
+          print("Hello")}
+
+  ──────────────────────────────────────────────────────────────────────────────
+  <image>{url-or-path}
+  ──────────────────────────────────────────────────────────────────────────────
+    Renders an image. Content is the image URL or local file path.
+
+    Example:
+      <image>{photo.png}
+      <image>{https://example.com/img.jpg}
+
+  ──────────────────────────────────────────────────────────────────────────────
+  <linkimage -image=src>{url}
+  ──────────────────────────────────────────────────────────────────────────────
+    Renders a clickable image. Clicking opens the URL.
+
+    Attributes:
+      -image=path   path or URL of the image to display (required)
+
+    Content is the destination URL when clicked.
+
+    Example:
+      <linkimage -image=banner.png>{https://example.com}
+
+  ──────────────────────────────────────────────────────────────────────────────
+  <table>{Col1, Col2, Col3}
+  <item>{val1, val2, val3}
+  ──────────────────────────────────────────────────────────────────────────────
+    Renders a table. <table> defines the header row with comma-separated
+    column names. Each <item> tag that immediately follows defines one data row.
+    Commas are reserved as column separators — do not use commas in cell values.
+
+    Example:
+      <table>{Name, Age, City}
+      <item>{Alice, 30, London}
+      <item>{Bob, 25, Tokyo}
+
+  ──────────────────────────────────────────────────────────────────────────────
+  <list -bullet=TYPE>{text}
+  <sublist -bullet=TYPE>{text}
+  <subsublist -bullet=TYPE>{text}
+  ──────────────────────────────────────────────────────────────────────────────
+    Renders list items at depth 1, 2, and 3 respectively.
+    Each item is a separate tag on its own line.
+    Nesting is achieved by placing <sublist> lines after a <list> line, and
+    <subsublist> lines after a <sublist> line.
+
+    Attributes:
+      -bullet=circle   unordered list (bullet point)
+      -bullet=number   ordered list (numbered)
+
+    Content supports inline tags.
+
+    Example:
+      <list -bullet=circle>{First item}
+      <sublist -bullet=circle>{Nested item}
+      <subsublist -bullet=number>{Deep nested numbered}
+      <list -bullet=circle>{Second item}
+
+================================================================================
+10. TAG REFERENCE — INLINE ELEMENTS
+================================================================================
+
+  Inline elements appear inside the content block of block elements.
+  They wrap a span of text and modify its appearance.
+  Inline elements can be nested inside each other.
+
+  All inline tags use the syntax:
+    <tagname>{content}
+
+  ──────────────────────────────────────────────────────────────────────────────
+  TEXT FORMATTING
+  ──────────────────────────────────────────────────────────────────────────────
+
+    <bold>{text}           renders text in bold
+    <italic>{text}         renders text in italic
+    <bold+italic>{text}    renders text in bold and italic simultaneously
+    <underline>{text}      renders text with underline
+    <strike>{text}         renders text with strikethrough
+
+  ──────────────────────────────────────────────────────────────────────────────
+  TEXT ENHANCEMENTS
+  ──────────────────────────────────────────────────────────────────────────────
+
+    <super>{text}          renders text as superscript
+    <sub>{text}            renders text as subscript
+    <mark>{text}           renders text with highlight (yellow background)
+    <code>{text}           renders text as inline monospace code
+
+  ──────────────────────────────────────────────────────────────────────────────
+  LINKS AND BUTTONS
+  ──────────────────────────────────────────────────────────────────────────────
+
+    <link -body=label>{url}
+      Renders a hyperlink. The -body attribute sets the visible text.
+      Content is the destination URL.
+
+      Attributes:
+        -body=label   visible link text (required)
+
+      Example:
+        <link -body=GitHub>{https://github.com/TheServer-lab/Celes}
+
+    <button -body=label>{url}
+      Renders a styled clickable button. Visually distinct from a text link.
+
+      Attributes:
+        -body=label   button label text (required)
+
+      Example:
+        <button -body=Download>{https://example.com/file.zip}
+
+  ──────────────────────────────────────────────────────────────────────────────
+  CHECKMARKS
+  ──────────────────────────────────────────────────────────────────────────────
+
+    <checkmark -check>{text}     renders a checked checkbox with label
+    <checkmark -uncheck>{text}   renders an unchecked checkbox with label
+
+    Intended for use inside <list> items to create task lists.
+
+    Example:
+      <list -bullet=circle>{<checkmark -check>{Buy milk}}
+      <list -bullet=circle>{<checkmark -uncheck>{Call dentist}}
+
+  ──────────────────────────────────────────────────────────────────────────────
+  NESTQUOTE
+  ──────────────────────────────────────────────────────────────────────────────
+
+    <nestquote>{text}
+      Renders a nested blockquote inside an existing <blockquote>.
+      Only valid inside a <blockquote> content block.
+
+      Example:
+        <blockquote>{She said: <nestquote>{I'll be back.}}
+
+  ──────────────────────────────────────────────────────────────────────────────
+  EMPTY (RAW TEXT)
+  ──────────────────────────────────────────────────────────────────────────────
+
+    <empty>{text}
+      Renders the content as raw plain text with no further parsing.
+      No inline tags inside <empty> are processed.
+      Useful for displaying literal tag syntax.
+
+      Example:
+        <line>{To write a heading use: <empty>{<header -size=1>{text}}}
+
+================================================================================
+11. TAG REFERENCE — SPACING AND BREAKS
+================================================================================
+
+  These are self-closing tags — they have no {} content block.
+
+  ──────────────────────────────────────────────────────────────────────────────
+  <newline>
+  ──────────────────────────────────────────────────────────────────────────────
+    Inserts a line break within the current block context.
+    Equivalent to <br> in HTML.
+
+  ──────────────────────────────────────────────────────────────────────────────
+  <pagebreak>
+  ──────────────────────────────────────────────────────────────────────────────
+    Marks a page break. In print or PDF rendering this forces a new page.
+    In screen renderers it may be shown as a divider.
+
+  ──────────────────────────────────────────────────────────────────────────────
+  <insertspace>
+  ──────────────────────────────────────────────────────────────────────────────
+    Inserts a thematic break — a horizontal rule with extra vertical spacing.
+    Used to separate unrelated content within a section.
+
+================================================================================
+12. TAG REFERENCE — 0.1.5 NEW TAGS
+================================================================================
+
+  The following tags were introduced in Celes 0.1.5.
+  Documents using these tags must declare <!Celes-0.1.5> or later.
+
+  ──────────────────────────────────────────────────────────────────────────────
+  <background>{color}
+  ──────────────────────────────────────────────────────────────────────────────
+    Sets the page background color.
+    Document-level tag — applies to the entire rendered page.
+    Only the first <background> tag in a file takes effect.
+    Duplicate <background> tags produce a validator warning.
+
+    Content is a CSS-compatible color value:
+      - Named colors : red, cornsilk, navy, white, etc.
+      - Hex values   : #ffffff, #1a1a2e, etc.
+      - rgb() and hsl() are NOT supported in 0.1.5
+
+    Example:
+      <background>{#F5F0EB}
+      <background>{cornsilk}
+
+  ──────────────────────────────────────────────────────────────────────────────
+  <coloredtext -color=VALUE>{text}
+  ──────────────────────────────────────────────────────────────────────────────
+    Inline tag. Renders the content text in the specified color.
+    The -color attribute is required. Omitting it is a validator error.
+
+    Attributes:
+      -color=VALUE   CSS color name or hex value (required)
+
+    Content supports further inline tags.
+
+    Example:
+      <line>{<coloredtext -color=tomato>{Warning:} read carefully.}
+      <line>{<coloredtext -color=#4A9ECC>{Blue text} here.}
+
+  ──────────────────────────────────────────────────────────────────────────────
+  <video>{url-or-path}
+  ──────────────────────────────────────────────────────────────────────────────
+    Block tag. Embeds an HTML5 video player.
+    Content is the video file URL or local path.
+
+    Attributes:
+      -loop       video loops continuously (flag)
+      -autoplay   video starts playing automatically (flag)
+      -mute       video is muted (flag)
+
+    Validator rules:
+      - Using -autoplay without -mute produces a warning.
+        Browsers block unmuted autoplay; the flag combination is required.
+      - Using <video> as an inline element (inside another tag's content)
+        produces an error.
+
+    Example:
+      <video>{clip.mp4}
+      <video -loop -mute>{background.mp4}
+      <video -autoplay -loop -mute>{intro.mp4}
+
+  ──────────────────────────────────────────────────────────────────────────────
+  <audio>{url-or-path}
+  ──────────────────────────────────────────────────────────────────────────────
+    Block tag. Embeds an HTML5 audio player.
+    Content is the audio file URL or local path.
+
+    Attributes:
+      -loop       audio loops continuously (flag)
+      -autoplay   audio starts playing automatically (flag)
+
+    Validator rules:
+      - Using <audio> as an inline element produces an error.
+
+    Example:
+      <audio>{track.mp3}
+      <audio -loop>{ambient.ogg}
+
+================================================================================
+13. NESTING RULES
+================================================================================
+
+  INLINE INSIDE BLOCK
+    All inline tags are valid inside any block tag's content block.
+
+      <line>{This is <bold>{bold} and <italic>{italic} text.}
+      <header -size=2>{<mark>{Important} Section}
+
+  INLINE INSIDE INLINE
+    Inline tags may be nested inside other inline tags.
+
+      <line>{<bold>{<italic>{bold and italic}}}
+      <line>{<mark>{<code>{highlighted code}}}
+
+  BLOCK INSIDE BLOCK
+    Block tags cannot be nested inside other block tags.
+    The following is invalid:
+
+      <line>{<header -size=2>{oops}}   ; ERROR — block inside block
+
+  NESTQUOTE INSIDE BLOCKQUOTE
+    <nestquote> is only valid inside a <blockquote> content block.
+
+  VIDEO / AUDIO BLOCK-ONLY
+    <video> and <audio> are block-only. Using them inline is an error.
+
+================================================================================
+14. MULTI-TAG LINES
+================================================================================
+
+  Multiple tags may appear on the same line provided each tag either:
+    (a) is a self-closing tag with no {} content, or
+    (b) is a complete tag+content unit (the {} is on the same line)
+
+  The parser splits such lines into individual tag tokens before processing.
+
+  Example:
+    <bold>{word}<italic>{phrase}<newline>
+
+  The following is NOT multi-tag — the second tag starts on a new line:
+    <bold>{word}
+    <italic>{phrase}
+
+================================================================================
+15. PARSER BEHAVIOUR
+================================================================================
+
+  STRICT MODE (REQUIRED)
+    Conforming parsers must operate in strict mode. Unrecognised or malformed
+    tags must produce error tokens, not silent fallback rendering.
+
+  ERROR TOKENS
+    When the parser encounters a malformed line it emits an error token.
+    Error tokens should be rendered visibly (e.g. with a warning indicator)
+    so the document author can find and correct them.
+
+  UNKNOWN TAGS
+    Tags not defined in the declared spec version should be treated as errors,
+    not silently skipped. This ensures documents are not partially rendered
+    against the wrong spec.
+
+  CONTENT PRESERVATION
+    Parsers must preserve the content of <codeblock> and <empty> tags
+    exactly as written, including all whitespace, newlines, and special
+    characters. No inline parsing is performed on these contents.
+
+  ATTRIBUTE DEFAULTS
+    Where an attribute has a documented default (e.g. -size=1 for <header>),
+    parsers SHOULD apply that default when the attribute is omitted.
+    Where no default is documented, omitting the attribute is an error.
+
+  BRACE MATCHING
+    The parser must track brace depth to find the matching closing }.
+    A { inside a content block that is not part of an inner tag increases
+    depth; it does not terminate or confuse the outer tag.
+
+  VERSION MISMATCH
+    If a parser encounters <!Celes-X.Y.Z> where X.Y.Z is newer than the
+    parser supports, it SHOULD emit a warning and proceed with best-effort
+    parsing using the rules it knows.
+
+================================================================================
+16. VALIDATOR RULES
+================================================================================
+
+  The Celes validator checks for semantic correctness beyond syntax.
+  Errors prevent rendering; warnings allow rendering with notice.
+
+  ERRORS
+    E01  Missing version declaration
+         The first non-blank line is not <!Celes-X.Y.Z>
+
+    E02  Malformed tag
+         A line begins with < but does not form a valid tag
+
+    E03  Unclosed brace
+         A tag content block has no matching closing }
+
+    E04  Missing required attribute
+         -color omitted on <coloredtext>
+         -image omitted on <linkimage>
+         -body omitted on <link> or <button>
+         -bullet omitted on <list>, <sublist>, or <subsublist>
+
+    E05  Invalid attribute value
+         -size on <header> is not 1–6
+         -align on <line> is not left, center, or right
+         -bullet on list tags is not circle or number
+
+    E06  Invalid color value
+         -color on <coloredtext> is not a recognised named color or hex value
+         Content of <background> is not a valid color
+
+    E07  Block tag used inline
+         <video> or <audio> appears inside another tag's content block
+
+    E08  <nestquote> outside <blockquote>
+         <nestquote> appears outside a <blockquote> content block
+
+  WARNINGS
+    W01  Duplicate <title>
+         More than one <title> tag in the document
+
+    W02  Duplicate <background>
+         More than one <background> tag; only the first takes effect
+
+    W03  <video -autoplay> without -mute
+         Browsers block unmuted autoplay; -mute should be added
+
+    W04  Unknown tag
+         A tag name is not defined in the declared spec version
+
+    W05  Missing declaration
+         No <!Celes-X.Y.Z> found; version assumed to be latest known
+
+================================================================================
+17. VERSION HISTORY
+================================================================================
+
+  0.1.5  (2026)
+    New tags : <video>, <audio>, <background>, <coloredtext>
+    Validator: E06 color validation, W02 duplicate background,
+               W03 autoplay without mute, E07 block-tag-inline
+    Tools    : Python package v0.1.5, VS Code extension v0.1.5,
+               Browser extension v0.1.5, Standalone Tk viewer
+
+  0.1.4  (2025)
+    Initial public release.
+    Tags     : title, author, date, section, header, line, blockquote,
+               codeblock, image, linkimage, table, item, list, sublist,
+               subsublist, bold, italic, bold+italic, underline, strike,
+               super, sub, mark, code, link, button, checkmark, nestquote,
+               empty, newline, pagebreak, insertspace
+    Tools    : Python package v0.1.4, VS Code extension v0.1.4,
+               Browser extension v0.1.4, WYSIWYG editor
+
+================================================================================
+END OF SPECIFICATION
+================================================================================
