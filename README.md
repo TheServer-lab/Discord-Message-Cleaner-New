@@ -90,7 +90,7 @@ pyinstaller --onefile --noconsole \
 Message Cleaner is released under a **custom license**. In summary:
 
 - ✅ You **may** use, modify, and distribute the code
-- ❌ You **must not** monetize it or use it for malicious or illegal purposes
+- ❌ You **must not** use it for malicious or illegal purposes
 - 📣 You **must** give credit and notify users of any unofficial changes
 
 See [`LICENSE.txt`](./LICENSE.txt) for full terms.
